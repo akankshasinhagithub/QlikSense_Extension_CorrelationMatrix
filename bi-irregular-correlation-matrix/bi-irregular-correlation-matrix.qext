@@ -1,0 +1,8 @@
+{
+    "name": "Correlation Matrix",
+    "description": "Correlation Matrix",
+    "icon": "extension",
+    "type": "visualization",
+    "version": "1.0",
+    "author": "Ralf Becher"
+}
