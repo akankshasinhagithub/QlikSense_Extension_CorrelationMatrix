@@ -6,6 +6,6 @@ First dimension is always a grouping dimension and not a value. At least two val
 
 Built with <a href="https://github.com/mbostock/d3">d3.js</a>, published with the MIT open-source license.
 
-![Correlation Matrix in Qlik Sense](CorrelationMatrix.PNG)
+![Correlation Matrix in Qlik Sense](CorrelationMatrix.gif)
 
 The example app uses the R built-in data set mtcars. This example creates 55 measures in the hypercube.
