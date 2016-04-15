@@ -5,7 +5,7 @@ Tested on Qlik Sense 2.2.3
 irregular.bi takes no responsibility for any code.
 Use at your own risk. 
 */
-define(["jquery", "qlik", "./scripts/d3.min", "./scripts/irregularUtils.min", "css!./styles/bi-irregular-correlation.css"],
+define(["jquery", "qlik", "./scripts/d3.min", "./scripts/irregularUtils.min", "css!./styles/bi-irregular-correlation-matrix.css"],
     function ($, qlik, d3) {
         'use strict';
 
@@ -119,10 +119,8 @@ define(["jquery", "qlik", "./scripts/d3.min", "./scripts/irregularUtils.min", "c
     });
 
 function viz($element, layout, matrix) {
-    var width = $element.width(); // space left for scrollbar
-    // Chart object height
+    var width = $element.width();
     var height = $element.height();
-    // Chart object id
     var id = "container_" + layout.qInfo.qId;
 
     $element.empty().append($('<div />').attr({
@@ -134,7 +132,6 @@ function viz($element, layout, matrix) {
         overflow: 'auto'
     }))
 
-    // read in the CSV file and put the data in a d3 format or an array of objects
     var data = [];
     matrix.forEach(function (d, i) {
         if (i > 0) {
@@ -148,9 +145,6 @@ function viz($element, layout, matrix) {
         }
     });
 
-    //console.log(JSON.stringify(data));
-
-    // standard d3 plot setup
     var margin = {
             top: 40,
             right: 80,
@@ -172,16 +166,16 @@ function viz($element, layout, matrix) {
     height = height - margin.top - margin.bottom;
 
     // set-up x and y scale
-    var x = d3.scale
+    var xScale = d3.scale
         .ordinal()
         .rangePoints([0, width])
         .domain(domain),
-        y = d3.scale
+        yScale = d3.scale
         .ordinal()
         .rangePoints([0, height])
         .domain(domain),
-        xSpace = x.range()[1] - x.range()[0], // this is the space of each grid space
-        ySpace = y.range()[1] - y.range()[0];
+        xSpace = xScale.range()[1] - xScale.range()[0], // this is the space of each grid space
+        ySpace = yScale.range()[1] - yScale.range()[0];
 
     var svg = d3.select("#" + id)
         .append("svg")
@@ -190,25 +184,22 @@ function viz($element, layout, matrix) {
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    // bind our data for each grid space
-    var cor = svg.selectAll(".cor")
+    var correl = svg.selectAll(".correl")
         .data(data)
         .enter()
         .append("g")
-        .attr("class", "cor")
+        .attr("class", "correl")
         .attr("transform", function (d) {
-            return "translate(" + x(d.x) + "," + y(d.y) + ")";
+            return "translate(" + xScale(d.x) + "," + yScale(d.y) + ")";
         });
 
-    // outer rectangle on each grid space
-    cor.append("rect")
+    correl.append("rect")
         .attr("width", xSpace)
         .attr("height", ySpace)
         .attr("x", -xSpace / 2)
         .attr("y", -ySpace / 2)
 
-    // below the diagonal
-    cor.filter(function (d) {
+    correl.filter(function (d) {
             var ypos = domain.indexOf(d.y);
             var xpos = domain.indexOf(d.x);
             if (xpos <= ypos) {
@@ -217,7 +208,6 @@ function viz($element, layout, matrix) {
                 return false;
             }
         })
-        // append a text
         .append("text")
         .attr("y", 5)
         .text(function (d) {
@@ -227,7 +217,6 @@ function viz($element, layout, matrix) {
                 return toLocalFixed(d.value, 2);
             }
         })
-        // color it
         .style("fill", function (d) {
             if (d.value === 1) {
                 return "#000";
@@ -239,9 +228,7 @@ function viz($element, layout, matrix) {
             return "Correlation\n" + d.y + ' : ' + d.x + "\n" + toLocalFixedUnPadded(d.value, 8);
         });
 
-
-    // above the diagonal
-    cor.filter(function (d) {
+    correl.filter(function (d) {
             var ypos = domain.indexOf(d.y);
             var xpos = domain.indexOf(d.x);
             if (xpos > ypos) {
@@ -250,7 +237,6 @@ function viz($element, layout, matrix) {
                 return false;
             }
         })
-        // add a circle
         .append("circle")
         .attr("r", function (d) {
             return (width / (num * 2)) * (Math.abs(d.value) + 0.1);
@@ -266,36 +252,31 @@ function viz($element, layout, matrix) {
             return "Correlation\n" + d.y + ' : ' + d.x + "\n" + toLocalFixedUnPadded(d.value, 8);
         });
 
-
-    // build the "yAxis" color scale
-    // its a series of rects colored correctly
-    // to produce a smooth gradient
-    var aS = d3.scale
+    var legendScale = d3.scale
         .linear()
-        //        .range([-margin.top + 5, height + margin.bottom - 5])
         .range([-margin.top + 14, height + 20])
         .domain([1, -1]);
 
-    var yA = d3.svg.axis()
+    var yAxis = d3.svg.axis()
         .orient("right")
-        .scale(aS)
+        .scale(legendScale)
         .tickPadding(7);
 
-    var aG = svg.append("g")
+    var svgG = svg.append("g")
         .attr("class", "y axis")
-        .call(yA)
-        .attr("transform", "translate(" + (width + margin.right / 2) + " ,0)")
+        .call(yAxis)
+        .attr("transform", "translate(" + (width + margin.right / 2) + " ,0)");
 
-    var iR = d3.range(-1, 1.01, 0.01);
-    var h = height / iR.length + 3;
-    iR.forEach(function (d) {
-        aG.append('rect')
+    var correlRange = d3.range(-1, 1.01, 0.01);
+    var legendHeight = height / correlRange.length + 3;
+    correlRange.forEach(function (d) {
+        svgG.append('rect')
             .style('fill', color(d))
             .style('stroke-width', 0)
             .style('stoke', 'none')
-            .attr('height', h)
+            .attr('height', legendHeight)
             .attr('width', 10)
             .attr('x', 0)
-            .attr('y', aS(d))
+            .attr('y', legendScale(d))
     });
 }
