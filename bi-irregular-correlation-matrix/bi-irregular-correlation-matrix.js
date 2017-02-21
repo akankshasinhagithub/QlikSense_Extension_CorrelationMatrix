@@ -5,7 +5,7 @@ Tested on Qlik Sense 2.2.3
 irregular.bi takes no responsibility for any code.
 Use at your own risk. 
 */
-define(["jquery", "qlik", "./scripts/d3.min", "./scripts/irregularUtils.min", "css!./styles/bi-irregular-correlation-matrix.css"],
+define(["jquery", "qlik", "./scripts/d3.min", "./scripts/irregularUtils", "css!./styles/bi-irregular-correlation-matrix.css"],
     function ($, qlik, d3) {
         'use strict';
 
@@ -16,8 +16,8 @@ define(["jquery", "qlik", "./scripts/d3.min", "./scripts/irregularUtils.min", "c
                     qDimensions: [],
                     qMeasures: [],
                     qInitialDataFetch: [{
-                        qWidth: 10,
-                        qHeight: 50
+                        qWidth: 0,
+                        qHeight: 0
 				}]
                 }
             },
@@ -41,6 +41,39 @@ define(["jquery", "qlik", "./scripts/d3.min", "./scripts/irregularUtils.min", "c
                                 uses: "dataHandling"
                             }
                         }
+                    },
+                    settings: {
+                        uses: "settings",
+                        items: {
+                            colors: {
+                                ref: "correlAggregation",
+                                type: "string",
+                                component: "dropdown",
+                                label: "Correlation Aggregation",
+                                options: [
+                                    {
+                                        value: "Sum",
+                                        label: "Min"
+										}, {
+                                        value: "Sum",
+                                        label: "Sum"
+										}, {
+                                        value: "Count",
+                                        label: "Count"
+										}, {
+                                        value: "Avg",
+                                        label: "Avg"
+										}, {
+                                        value: "Min",
+                                        label: "Min"
+										}, {
+                                        value: "Max",
+                                        label: "Max"
+										}
+									],
+                                defaultValue: "Avg"
+                            }
+                        }
                     }
                 }
             },
@@ -49,10 +82,13 @@ define(["jquery", "qlik", "./scripts/d3.min", "./scripts/irregularUtils.min", "c
             },
             paint: function ($element, layout) {
                 var app = qlik.currApp(this);
-                //console.log(layout.qHyperCube);
+                console.log(layout);
                 var groupingField = layout.qHyperCube.qDimensionInfo[0].qGroupFieldDefs[0];
                 var correlFields = layout.qHyperCube.qDimensionInfo.slice(1).map(function (d) {
-                    return d.qGroupFieldDefs[0];
+                    return '[' + d.qGroupFieldDefs[0] + ']';
+                });
+                var correlFieldLabels = layout.qHyperCube.qDimensionInfo.slice(1).map(function (d) {
+                    return d.qFallbackTitle;
                 });
                 var cubeDef = {
                     "qDimensions": [],
@@ -68,25 +104,28 @@ define(["jquery", "qlik", "./scripts/d3.min", "./scripts/irregularUtils.min", "c
                 };
                 var len = correlFields.length + 1;
                 var matrix = new Array(len);
-                var header = correlFields.slice(0);
+                var header = correlFieldLabels.slice(0);
                 header.unshift("");
                 for (var i = 0; i < len; i++) {
                     if (i == 0) {
                         matrix[i] = header;
                     } else {
                         matrix[i] = Array.apply(null, Array(len)).map(Number.prototype.valueOf, 1);;
-                        matrix[i][0] = correlFields[i - 1];
+                        matrix[i][0] = correlFieldLabels[i - 1];
                         for (var j = 2; j < len; j++) {
                             if (j > i) {
                                 var a = matrix[i][0],
-                                    b = matrix[0][j];
+                                    b = matrix[0][j],
+                                    c = correlFields[i -1],
+                                    d = correlFields[j -1];
+                                //console.log(a,b,c,d);
                                 matrix[i][j] = a + "-" + b;
                                 //                                cubeDef.qHyperCubeDef.qMeasures.push({
                                 cubeDef.qMeasures.push({
                                     "qLibraryId": "",
                                     "qDef": {
                                         "qLabel": "Correlation " + a + "-" + b,
-                                        "qDef": "Correl(TOTAL <" + groupingField + "> " + a + "," + b + ")"
+                                        "qDef": "Correl(Aggr(" + layout.correlAggregation + "(" + c + "), " + groupingField + "), Aggr(" + layout.correlAggregation + "(" + d + "), " + groupingField + "))"
                                     }
                                 });
                             }
@@ -94,6 +133,7 @@ define(["jquery", "qlik", "./scripts/d3.min", "./scripts/irregularUtils.min", "c
                     }
                 }
                 cubeDef.qInitialDataFetch[0].qWidth = cubeDef.qMeasures.length;
+                console.log(cubeDef);
 
                 app.createCube(cubeDef, function (data) {
                     var cube = data.qHyperCube.qDataPages[0].qMatrix;
@@ -129,7 +169,8 @@ function viz($element, layout, matrix) {
     }).css({
         height: height,
         width: width,
-        overflow: 'auto'
+        overflow: 'auto',
+        cursor: 'default'
     }))
 
     var data = [];

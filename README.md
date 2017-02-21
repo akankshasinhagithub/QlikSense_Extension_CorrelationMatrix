@@ -9,3 +9,19 @@ Built with <a href="https://github.com/mbostock/d3">d3.js</a>, published with th
 ![Correlation Matrix in Qlik Sense](CorrelationMatrix.gif)
 
 The example app uses the R built-in data set mtcars. This example creates 55 measures in the hypercube.
+
+## Author
+
+**Ralf Becher**
+
++ [irregular.bi](http://irregular.bi)
+* [twitter/irregularbi](http://twitter.com/irregularbi)
+* [github.com/ralfbecher](http://github.com/ralfbecher)
+
+## License
+
+Copyright © 2017 Ralf Becher
+
+Released under the MIT license.
+
+***
