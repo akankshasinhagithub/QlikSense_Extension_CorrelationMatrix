@@ -81,8 +81,9 @@ define(["jquery", "qlik", "./scripts/d3.min", "./scripts/irregularUtils", "css!.
                 canTakeSnapshot: false
             },
             paint: function ($element, layout) {
-                var app = qlik.currApp(this);
-                console.log(layout);
+                var debug = true;
+                var app = qlik.currApp();
+                if (debug) console.log(layout);
                 var groupingField = layout.qHyperCube.qDimensionInfo[0].qGroupFieldDefs[0];
                 var correlFields = layout.qHyperCube.qDimensionInfo.slice(1).map(function (d) {
                     return '[' + d.qGroupFieldDefs[0] + ']';
@@ -118,7 +119,7 @@ define(["jquery", "qlik", "./scripts/d3.min", "./scripts/irregularUtils", "css!.
                                     b = matrix[0][j],
                                     c = correlFields[i -1],
                                     d = correlFields[j -1];
-                                //console.log(a,b,c,d);
+                                //if (debug) console.log(a,b,c,d);
                                 matrix[i][j] = a + "-" + b;
                                 //                                cubeDef.qHyperCubeDef.qMeasures.push({
                                 cubeDef.qMeasures.push({
@@ -133,9 +134,11 @@ define(["jquery", "qlik", "./scripts/d3.min", "./scripts/irregularUtils", "css!.
                     }
                 }
                 cubeDef.qInitialDataFetch[0].qWidth = cubeDef.qMeasures.length;
-                console.log(cubeDef);
+                if (debug) console.log(cubeDef);
 
+                
                 app.createCube(cubeDef, function (data) {
+                    if (debug) console.log(data);
                     var cube = data.qHyperCube.qDataPages[0].qMatrix;
                     if (cube.length > 0) {
                         var measure = 0;
@@ -153,6 +156,10 @@ define(["jquery", "qlik", "./scripts/d3.min", "./scripts/irregularUtils", "css!.
                     } else {
                         $element.empty();
                     }
+                }).then(function(rep){
+                    if (debug) console.log("then", rep);
+                }).catch(function(err) {
+                    if (debug) console.log("catch", err);
                 });
             }
         }
